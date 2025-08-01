@@ -37,6 +37,10 @@ class DrawGraph:
 
         self.line_color = (255, 255, 255)
         self.image = np.zeros((self.h, self.w, 3), np.uint8)
+        self.max_h = 0
+        self.min_h = self.h
+        self.max_w = 0
+        self.min_w = self.w
 
     # 设置渐变背景
     def set_gradient_background(self):
@@ -80,6 +84,11 @@ class DrawGraph:
             point_size,
             color,
     ):
+        h, w = self.get_relative_point(h_w_unit_point)
+        self.max_h = max(self.max_h, h + point_size)
+        self.min_h = min(self.min_h, h - point_size)
+        self.max_w = max(self.max_w, w + point_size)
+        self.min_w = min(self.min_w, w - point_size)
         cv2.circle(
             self.image,
             self.get_draw_point_by_unit(h_w_unit_point),
@@ -147,6 +156,7 @@ class YoloLabelBox(NamedTuple):
 class GenLabel:
     point_class_id = 1
     empty_class_id = 0
+    region_class_id = 2
 
     def __init__(self, dg: DrawGraph):
         self.dg = dg
@@ -179,9 +189,19 @@ class GenLabel:
 
     def get_str(self):
         self.fill_data()
+        box_list = []
+        for ph, pw in self.graph.iter_non_block_point():
+            box_list.append(self.data[ph][pw])
+        box_list.append(YoloLabelBox(
+            self.region_class_id,
+            (self.dg.max_w + self.dg.min_w) / 2 / self.dg.w,
+            (self.dg.max_h + self.dg.min_h) / 2 / self.dg.h,
+            (self.dg.max_w - self.dg.min_w) / self.dg.w,
+            (self.dg.max_h - self.dg.min_h) / self.dg.h,
+        ))
         return '\n'.join(
-            ' '.join(map(str, self.data[ph][pw]))
-            for ph, pw in self.graph.iter_non_block_point()
+            ' '.join(map(str, box))
+            for box in box_list
         )
 
 
@@ -216,7 +236,7 @@ def get_random_sample():
     ls = LinkSolution(graph, point_pair_list)
     dg = DrawGraph(
         ls,
-        base_size=random.randint(4, 6),
+        base_size=random.randint(2, 4),
         little_point_size_times=random.uniform(2.0, 3.0),
         block_size_times=random.uniform(24.0, 28.0),
         point_size_times=random.uniform(10.0, 13.0),
