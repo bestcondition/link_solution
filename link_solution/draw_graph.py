@@ -1,10 +1,17 @@
 import random
+from pathlib import Path
 
 import cv2
 import numpy as np
 from typing import NamedTuple
 
 from link_solution.link_solution import Value, s_list, LinkSolution, Graph
+
+
+def resize_by_w(img, target_w):
+    h, w = img.shape[:2]
+    target_h = int(h * target_w / w)
+    return cv2.resize(img, (target_w, target_h))
 
 
 class DrawGraph:
@@ -19,6 +26,8 @@ class DrawGraph:
             left_times: float = 25.0,
             right_times: float = 50.0,
             bottom_times: float = 25.0,
+            header_img: np.ndarray = None,
+            tail_img: np.ndarray = None,
     ):
         self.link_solution = link_solution
         self.graph = self.link_solution.graph
@@ -37,6 +46,23 @@ class DrawGraph:
 
         self.line_color = (255, 255, 255)
         self.image = np.zeros((self.h, self.w, 3), np.uint8)
+
+        # 画背景
+        self.set_gradient_background()
+
+        # 拼接图像，并且更新图像的高度和宽度
+        if header_img is not None and tail_img is not None:
+            header_img_resized = resize_by_w(header_img, self.w)
+            tail_img_resized = resize_by_w(tail_img, self.w)
+
+            # 竖着拼接 header image tail
+            new_image = cv2.vconcat([header_img_resized, self.image, tail_img_resized])
+
+            self.top = self.top + header_img_resized.shape[0]
+            self.image = new_image
+            self.h = self.image.shape[0]
+            self.w = self.image.shape[1]
+
         self.max_h = 0
         self.min_h = self.h
         self.max_w = 0
@@ -98,8 +124,6 @@ class DrawGraph:
         )
 
     def draw(self):
-        # 画背景
-        self.set_gradient_background()
         # 画框架
         for point in self.graph.iter_non_block_point():
             self.finish_point(point)
@@ -205,13 +229,18 @@ class GenLabel:
         )
 
 
-def get_random_sample():
-    graph_has_block_rate = 0.2  # 图像出现block的概率
-    block_rate = 0.1  # block图像中，块block的概率
-    point_rate = 0.2
-
-    h = random.randint(4, 13)  # 随机高
-    w = random.randint(4, 13)  # 随机宽
+def get_random_sample(
+        graph_has_block_rate=0.2,  # 图像出现block的概率
+        block_rate=0.08,  # block图像中，块block的概率
+        point_rate=0.2,
+        head_or_tail_path: str = 'head_or_tail',
+):
+    ht_list = list(Path(head_or_tail_path).iterdir())
+    random.shuffle(ht_list)
+    header = cv2.imread(str(ht_list[0]))
+    tail = cv2.imread(str(ht_list[-1]))
+    h = random.randint(5, 11)  # 随机高
+    w = h  # 宽高相等
     block_rectangle_list = []
     point_list = []
     if random.random() < graph_has_block_rate:
@@ -237,13 +266,15 @@ def get_random_sample():
     dg = DrawGraph(
         ls,
         base_size=random.randint(2, 4),
-        little_point_size_times=random.uniform(2.0, 3.0),
+        little_point_size_times=random.uniform(2.5, 3.5),
         block_size_times=random.uniform(24.0, 28.0),
         point_size_times=random.uniform(10.0, 13.0),
-        top_times=random.uniform(28.0, 50.0),
-        left_times=random.uniform(28.0, 50.0),
-        right_times=random.uniform(28.0, 50.0),
-        bottom_times=random.uniform(28.0, 50.0),
+        top_times=random.uniform(15.0, 24),
+        left_times=random.uniform(15.0, 24),
+        right_times=random.uniform(15.0, 24),
+        bottom_times=random.uniform(15.0, 24),
+        header_img=header,
+        tail_img=tail,
     )
     gl = GenLabel(dg)
     img = dg.draw()

@@ -2,3 +2,6 @@
 *.pt
 images
 runs
+head_or_tail
+t
+test.py
