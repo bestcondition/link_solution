@@ -18,3 +18,4 @@ test: # test images (optional)
 names:
   0: empty
   1: point
+  2: region
