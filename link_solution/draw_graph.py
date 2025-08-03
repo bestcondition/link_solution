@@ -14,6 +14,17 @@ def resize_by_w(img, target_w):
     return cv2.resize(img, (target_w, target_h))
 
 
+def get_relative_point(point, top, left, block_size):
+    h = top + point[0] * block_size
+    w = left + point[1] * block_size
+    return h, w
+
+
+def get_draw_point_by_unit(point, top, left, block_size):
+    rp = get_relative_point(point, top, left, block_size)
+    return int(rp[1]), int(rp[0])
+
+
 class DrawGraph:
     def __init__(
             self,
@@ -101,8 +112,7 @@ class DrawGraph:
         return h_w_point[1], h_w_point[0]
 
     def get_draw_point_by_unit(self, h_w_unit_point):
-        h_w_point = self.get_relative_point(h_w_unit_point)
-        return self.get_draw_point(h_w_point)
+        return get_draw_point_by_unit(h_w_unit_point, self.top, self.left, self.block_size)
 
     def draw_circle(
             self,
@@ -155,9 +165,7 @@ class DrawGraph:
             self.draw_line(point, n_point)
 
     def get_relative_point(self, point):
-        h = self.top + point[0] * self.block_size
-        w = self.left + point[1] * self.block_size
-        return h, w
+        return get_relative_point(point, self.top, self.left, self.block_size)
 
     def draw_line(self, point, n_point):
         cv2.line(

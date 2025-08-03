@@ -201,12 +201,21 @@ class LinkSolution:
         # 周围空格子多的点优先，这是一条更快到达解的策略
         self.point_pair_list.sort(key=lambda p: self.graph.get_empty_out_len(list(p)))
 
+        self.i_path = [
+            []
+            for _ in range(self.n)
+        ]
+
     def __str__(self):
         return str(self.graph)
 
     def solution(self):
         """解决方案"""
-        return self.dfs(0, self.point_pair_list[0].start_point)
+        flag = self.dfs(0, self.point_pair_list[0].start_point)
+        if flag:
+            for i in range(self.n):
+                self.i_path[i].append(self.point_pair_list[i].end_point)
+        return flag
 
     def get_neighbor_parent_set(self, point, uf: UnionFind):
         neighbor_parent_set = set()
@@ -229,10 +238,16 @@ class LinkSolution:
 
     def dfs(self, i, point, ) -> bool:
         """深度优先搜索，i表示正在解决第几组点，point表示上次选的点"""
+        self.i_path[i].append(point)
+
+        def return_false():
+            self.i_path[i].pop()
+            return False
+
         point_pair = self.point_pair_list[i]
         # 每次进行联通性校验，这个操作必须每次做，因为他时间复杂度小，剪枝效果好
         if not self.connect_check(i + 1):
-            return False
+            return return_false()
         # 最后一个点
         end_point = point_pair.end_point
         neighbor_point_list = self.graph.get_neighbor_point_list(point)
@@ -267,7 +282,7 @@ class LinkSolution:
                 else:
                     # 不可行则将上面点还原
                     self.graph.set_value(next_point, Value.empty)
-        return False
+        return return_false()
 
 
 s1 = LinkSolution(
