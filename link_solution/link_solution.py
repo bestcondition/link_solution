@@ -211,10 +211,14 @@ class LinkSolution:
 
     def solution(self):
         """解决方案"""
+        print(self.graph)
+        print(self.graph.data)
+        t0 = time.time()
         flag = self.dfs(0, self.point_pair_list[0].start_point, self.point_pair_list[0], self.point_pair_list[1:])
         if flag:
-            for i in range(self.n):
-                self.i_path[i].append(self.point_pair_list[i].end_point)
+            for point_pair in self.point_pair_list:
+                self.i_path[point_pair.value].append(point_pair.end_point)
+        print(f'耗时：{time.time() - t0:.4f}s')
         return flag
 
     def get_neighbor_parent_set(self, point, uf: UnionFind):
@@ -238,10 +242,10 @@ class LinkSolution:
 
     def dfs(self, i, point, pp: PointPair, remain_point_pair_list) -> bool:
         """深度优先搜索，i表示正在解决第几组点，point表示上次选的点"""
-        self.i_path[i].append(point)
+        self.i_path[pp.value].append(point)
 
         def return_false():
-            self.i_path[i].pop()
+            self.i_path[pp.value].pop()
             return False
 
         point_pair = pp
