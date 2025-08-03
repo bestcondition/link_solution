@@ -211,7 +211,7 @@ class LinkSolution:
 
     def solution(self):
         """解决方案"""
-        flag = self.dfs(0, self.point_pair_list[0].start_point)
+        flag = self.dfs(0, self.point_pair_list[0].start_point, self.point_pair_list[0], self.point_pair_list[1:])
         if flag:
             for i in range(self.n):
                 self.i_path[i].append(self.point_pair_list[i].end_point)
@@ -223,12 +223,12 @@ class LinkSolution:
             neighbor_parent_set.add(uf.find(next_point))
         return neighbor_parent_set
 
-    def connect_check(self, i):
+    def connect_check(self, point_pair_list:list[PointPair]) -> bool:
         uf = self.graph.get_union_find()
         """连通性校验"""
-        for j in range(i, self.n):
-            start_point = self.point_pair_list[j].start_point
-            end_point = self.point_pair_list[j].end_point
+        for point_pair in point_pair_list:
+            start_point = point_pair.start_point
+            end_point = point_pair.end_point
             start_neighbor_parent_set = self.get_neighbor_parent_set(start_point, uf)
             end_neighbor_parent_set = self.get_neighbor_parent_set(end_point, uf)
             # 如果空邻居有相同的，说明联通，如果没有相同的，说明不联通
@@ -236,7 +236,7 @@ class LinkSolution:
                 return False
         return True
 
-    def dfs(self, i, point, ) -> bool:
+    def dfs(self, i, point, pp: PointPair, remain_point_pair_list) -> bool:
         """深度优先搜索，i表示正在解决第几组点，point表示上次选的点"""
         self.i_path[i].append(point)
 
@@ -244,9 +244,9 @@ class LinkSolution:
             self.i_path[i].pop()
             return False
 
-        point_pair = self.point_pair_list[i]
+        point_pair = pp
         # 每次进行联通性校验，这个操作必须每次做，因为他时间复杂度小，剪枝效果好
-        if not self.connect_check(i + 1):
+        if not self.connect_check(remain_point_pair_list):
             return return_false()
         # 最后一个点
         end_point = point_pair.end_point
@@ -263,8 +263,10 @@ class LinkSolution:
                     if rt:
                         return rt
                 else:
+                    rm = remain_point_pair_list[1:]
+                    rm.sort(key=lambda p: self.graph.get_empty_out_len(list(p)))
                     # 如果不是最后一组点，则进行下一组
-                    rt = self.dfs(i + 1, self.point_pair_list[i + 1].start_point)
+                    rt = self.dfs(i + 1, remain_point_pair_list[0].start_point, remain_point_pair_list[0], rm)
                     if rt:
                         return rt
                 # 最后一个点，不需要做下面的操作
@@ -275,7 +277,7 @@ class LinkSolution:
             if next_value == Value.empty:
                 self.graph.set_value(next_point, point_pair.value)
                 # 返回这个选择是否可行
-                rt = self.dfs(i, next_point)
+                rt = self.dfs(i, next_point, pp, remain_point_pair_list)
                 if rt:
                     # 可行则返回可行
                     return rt
