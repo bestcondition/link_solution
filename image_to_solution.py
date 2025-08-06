@@ -110,9 +110,14 @@ class ImageToSolution:
         ls = LinkSolution(graph, point_pair_list)
         box1 = self.box_list[0]
         box2 = self.box_list[1]
-        center_h_diff = box1.ch - box2.ch
-        center_g_h_diff = box1.g_point[0] - box2.g_point[0]
-        self.border_size = center_h_diff / center_g_h_diff
+        center_h_diff = abs(box1.ch - box2.ch)
+        center_g_h_diff = abs(box1.g_point[0] - box2.g_point[0])
+        center_w_diff = abs(box1.cw - box2.cw)
+        center_g_w_diff = abs(box1.bh - box2.bh)
+        if center_h_diff > center_w_diff:
+            self.border_size = center_h_diff / center_g_h_diff
+        else:
+            self.border_size = center_w_diff / center_g_w_diff
         self.crop_top = int(box1.ch - self.border_size * box1.g_point[0])
         self.crop_left = int(box1.cw - self.border_size * box1.g_point[1])
         self.top = self.crop_top + self.min_h
